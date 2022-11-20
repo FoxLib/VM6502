@@ -8,8 +8,6 @@ $bin_file = '';
 $hex_file = '';
 $mif_file = '';
 
-$font = file_get_contents(__DIR__ . '/font.bin');
-
 foreach ($argv as $val) {
 
     if (preg_match('~bin=(.+)~', $val, $c)) $bin_file = $c[1];
@@ -49,9 +47,6 @@ $hex = '';
 for ($i = 0; $i < 65536; $i++) {
 
     $mem[$i] = $mem[$i] ?? 0;
-
-    // Загрузка шрифтов
-    if ($i >= 0x3000 && $i < 0x4000) $mem[$i] = ord($font[$i - 0x3000]);
 
     $res .= chr($mem[$i]);
     $hex .= sprintf("%02x\n", $mem[$i]);

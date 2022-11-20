@@ -1,4 +1,10 @@
+MIF=php ../makemif.php
+
 all:
-	cl65 -t nes hello.c
-	#cc65 --cpu 6502 hello.c
-	#ca65 hello.s --listing hello.lst
+	ca65 main.s --listing main.lst
+	$(MIF) main.lst \
+		bin=../../program.bin \
+		mif=../../de0/mem.mif \
+		hex=../../tb.hex
+	rm *.o
+	cd ../.. && make iverilog && ./tb

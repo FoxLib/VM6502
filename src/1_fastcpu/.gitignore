@@ -28,3 +28,6 @@ tb.vcd
 tb.hex
 obj_dir
 tb
+*.lst
+*.o
+program.bin
