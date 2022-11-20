@@ -29,7 +29,6 @@ protected:
     unsigned char* video_char;
     unsigned char* video_font;
 
-    int videomode = 0;
     int ps_clock = 0, ps_data = 0, kbd_phase = 0, kbd_ticker = 0;
     unsigned char kbd[256], kbd_top = 0, kb_hit_cnt = 0;
 
@@ -47,7 +46,6 @@ public:
         pticks      = 0;
         frame_id    = 0;
         ps_clock    = 1;
-        videomode   = 0;
 
         memory      = (unsigned char*) malloc(65536);
         video_char  = (unsigned char*) malloc(1024);
@@ -92,7 +90,7 @@ public:
         // Загрузка font
         for (int i = 0; i < 1024; i++) {
 
-            video_char[i] = i;
+            video_char[i] = i & 127;
             video_font[i] = font[i];
         }
 
@@ -124,7 +122,6 @@ public:
 
             case 0x200: cpu_mod->in = ps2_mod->data; break;
             case 0x201: cpu_mod->in = kb_hit_cnt; break;
-            case 0x202: cpu_mod->in = videomode; break;
             default:    cpu_mod->in = memory[ A ];
         }
 
