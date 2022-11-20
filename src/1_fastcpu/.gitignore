@@ -25,3 +25,6 @@ PLLJ_PLLSPE_INFO.txt
 c5_pin_model_dump.txt
 tb.gtkw
 tb.vcd
+tb.hex
+obj_dir
+tb

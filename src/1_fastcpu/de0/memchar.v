@@ -1,15 +1,16 @@
 // synopsys translate_off
 `timescale 1 ps / 1 ps
+
 // synopsys translate_on
-module vid (clock, a0, a1, d0, d1, w0, w1, q0, q1);
+module memchar (clock, a0, a1, d0, d1, w0, w1, q0, q1);
 
 input           clock;
-input    [17:0] a0;
-input    [17:0] a1;
-input    [ 3:0] d0;
-input    [ 3:0] d1;
-output   [ 3:0] q0;
-output   [ 3:0] q1;
+input    [ 9:0] a0;
+input    [ 9:0] a1;
+input    [ 7:0] d0;
+input    [ 7:0] d1;
+output   [ 7:0] q0;
+output   [ 7:0] q1;
 input           w0;
 input           w1;
 
@@ -55,11 +56,11 @@ defparam
     altsyncram_component.clock_enable_output_a    = "BYPASS",
     altsyncram_component.clock_enable_output_b    = "BYPASS",
     altsyncram_component.indata_reg_b             = "CLOCK0",
-    altsyncram_component.init_file                = "vid.mif",
+    altsyncram_component.init_file                = "memchar.mif",
     altsyncram_component.intended_device_family   = "Cyclone V",
     altsyncram_component.lpm_type                 = "altsyncram",
-    altsyncram_component.numwords_a               = 262144,
-    altsyncram_component.numwords_b               = 262144,
+    altsyncram_component.numwords_a               = 1024,
+    altsyncram_component.numwords_b               = 1024,
     altsyncram_component.operation_mode           = "BIDIR_DUAL_PORT",
     altsyncram_component.outdata_aclr_a           = "NONE",
     altsyncram_component.outdata_aclr_b           = "NONE",
@@ -70,10 +71,10 @@ defparam
     altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
     altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
     altsyncram_component.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ",
-    altsyncram_component.widthad_a                = 18,
-    altsyncram_component.widthad_b                = 18,
-    altsyncram_component.width_a                  = 4,
-    altsyncram_component.width_b                  = 4,
+    altsyncram_component.widthad_a                = 10,
+    altsyncram_component.widthad_b                = 10,
+    altsyncram_component.width_a                  = 8,
+    altsyncram_component.width_b                  = 8,
     altsyncram_component.width_byteena_a          = 1,
     altsyncram_component.width_byteena_b          = 1,
     altsyncram_component.wrcontrol_wraddress_reg_b = "CLOCK0";

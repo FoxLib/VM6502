@@ -1,6 +1,8 @@
-#include "obj_dir/Vdsub.h"
+#include "obj_dir/Vga.h"
 #include "obj_dir/Vcore.h"
 #include "obj_dir/Vps2.h"
+
+#include "font.h"
 
 #include <SDL2/SDL.h>
 
@@ -19,12 +21,13 @@ protected:
     SDL_Event           evt;
     Uint32*             screen_buffer;
 
-    Vdsub* vga_mod;
-    Vcore* cpu_mod;
-    Vps2*  ps2_mod;
+    Vga*    vga_mod;
+    Vcore*  cpu_mod;
+    Vps2*   ps2_mod;
 
     unsigned char* memory;
-    unsigned char* video;
+    unsigned char* video_char;
+    unsigned char* video_font;
 
     int videomode = 0;
     int ps_clock = 0, ps_data = 0, kbd_phase = 0, kbd_ticker = 0;
@@ -47,10 +50,11 @@ public:
         videomode   = 0;
 
         memory      = (unsigned char*) malloc(65536);
-        video       = (unsigned char*) malloc(640*400);
+        video_char  = (unsigned char*) malloc(1024);
+        video_font  = (unsigned char*) malloc(1024);
 
         // Модули
-        vga_mod     = new Vdsub();
+        vga_mod     = new Vga();
         cpu_mod     = new Vcore();
         ps2_mod     = new Vps2();
 
@@ -85,10 +89,12 @@ public:
             fclose(fp);
         }
 
-        // Тестовое заполнение графического экрана
-        for (int y = 0; y < 400; y++)
-        for (int x = 0; x < 640; x++)
-            video[x + y*640] = 1;
+        // Загрузка font
+        for (int i = 0; i < 1024; i++) {
+
+            video_char[i] = i;
+            video_font[i] = font[i];
+        }
 
         // Сброс процессора
         cpu_mod->reset_n = 0;
@@ -96,13 +102,12 @@ public:
         cpu_mod->clock   = 0; cpu_mod->eval();
         cpu_mod->clock   = 1; cpu_mod->eval();
         cpu_mod->reset_n = 1;
-        cpu_mod->clock   = 0; cpu_mod->eval();
-        cpu_mod->clock   = 1; cpu_mod->eval();
-        vga_mod->reset_n = 1;
     }
 
     // Один такт 25 мгц
     void tick() {
+
+        int A = cpu_mod->address;
 
         // Обработка событий клавиатуры
         kbd_pop(ps_clock, ps_data);
@@ -110,15 +115,9 @@ public:
         ps2_mod->ps_clock = ps_clock;
         ps2_mod->ps_data  = ps_data;
 
-        int A = cpu_mod->address;
-
-        // Видеопамять располагается по адресу 2000-3FFF
-        vga_mod->data = memory[ vga_mod->address ];
-        vga_mod->gd   = video [ vga_mod->ga ];
-        vga_mod->mode = videomode;
-
-        // Запись в видеопамять видеопроцессором
-        if (vga_mod->gwe) video[ vga_mod->gw ] = vga_mod->go;
+        // Считывание из видеопамяти
+        vga_mod->char_data = video_char[vga_mod->char_addr];
+        vga_mod->font_data = video_font[vga_mod->font_addr];
 
         // Роутер памяти
         switch (A) {
@@ -142,13 +141,6 @@ public:
 
         // Появились новые данные
         if (ps2_mod->done) kb_hit_cnt++;
-
-        // Есть запись в некоторые порты
-        if (cpu_mod->we) {
-            switch (cpu_mod->address) {
-                case 0x202: videomode = cpu_mod->out; break;
-            }
-        }
 
         vga(vga_mod->HS, vga_mod->VS, (vga_mod->R*16)*65536 + (vga_mod->G*16)*256 + (vga_mod->B*16));
     }
@@ -435,7 +427,8 @@ public:
     // Уничтожение окна
     int destroy() {
 
-        free(video);
+        free(video_font);
+        free(video_char);
         free(memory);
         free(screen_buffer);
 

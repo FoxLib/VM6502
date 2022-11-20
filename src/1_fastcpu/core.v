@@ -10,9 +10,9 @@
 module core
 (
     input               clock,
-    input               hold,
-    input               reset_n,
-    input               intr,
+    input               hold,           // 1=Процессор в работе
+    input               reset_n,        // 0=Сброс процессора
+    input               intr,           // IRQ срабатывает на позитивном фронте
     output      [15:0]  address,
     input       [ 7:0]  in,
     output  reg [ 7:0]  out,
@@ -385,9 +385,6 @@ end
 // Арифметико-логическое устройство
 // =============================================================================
 
-reg  [8:0]  R;
-reg  [7:0]  af;
-
 // Статусы ALU
 wire zero  = R[7:0] == 8'b0; // Флаг нуля
 wire sign  = R[7];           // Флаг знака
@@ -396,46 +393,32 @@ wire osbc  = (op1[7] ^ op2[7]       ) & (op1[7] ^ R[7]); // Переполнен
 wire cin   =  P[0];
 wire carry =  R[8];
 
-always @* begin
+// Вычисление результата АЛУ
+wire [8:0] R =
+    alu == 4'h0 ? op1 | op2         : // ORA
+    alu == 4'h1 ? op1 & op2         : // AND
+    alu == 4'h2 ? op1 ^ op2         : // EOR
+    alu == 4'h3 ? op1 + op2 + cin   : // ADC
+    alu == 4'h4 ? op1               : // STA
+    alu == 4'h5 ? op2               : // LDA
+    alu == 4'h6 ? op1 - op2         : // CMP
+    alu == 4'h7 ? op1 - op2 - !cin  : // SBC
+    alu == 4'h8 ? {op2[6:0], 1'b0}  : // ASL
+    alu == 4'h9 ? {op2[6:0], cin}   : // ROL
+    alu == 4'hA ? {1'b0, op2[7:1]}  : // LSR
+    alu == 4'hB ? {cin,  op2[7:1]}  : // ROR
+    alu == 4'hC ? op1 & op2         : // BIT
+    alu == 4'hD ? op2 - 1'b1        : // DEC
+    alu == 4'hE ? op2 + 1'b1 : 8'b0;  // INC
 
-    // Расчет результата
-    case (alu)
-
-        // Основные
-        /* ORA */ 4'h0: R = op1 | op2;
-        /* AND */ 4'h1: R = op1 & op2;
-        /* EOR */ 4'h2: R = op1 ^ op2;
-        /* ADC */ 4'h3: R = op1 + op2 + cin;
-        /* STA */ 4'h4: R = op1;
-        /* LDA */ 4'h5: R = op2;
-        /* CMP */ 4'h6: R = op1 - op2;
-        /* SBC */ 4'h7: R = op1 - op2 - !cin;
-        // Дополнительные
-        /* ASL */ 4'h8: R = {op2[6:0], 1'b0};
-        /* ROL */ 4'h9: R = {op2[6:0], cin};
-        /* LSR */ 4'hA: R = {1'b0, op2[7:1]};
-        /* ROR */ 4'hB: R = {cin,  op2[7:1]};
-        /* BIT */ 4'hC: R = op1 & op2;
-        /* DEC */ 4'hD: R = op2 - 1'b1;
-        /* INC */ 4'hE: R = op2 + 1'b1;
-
-    endcase
-
-    // Расчет флагов
-    casex (alu)
-
-        // ORA, AND, EOR, STA, LDA, DEC, INC
-        4'b000x, 4'b0010, 4'b010x, 4'b111x:
-                 af = {sign,       P[6:2], zero,   P[0]}; // OTH
-        4'b0011: af = {sign, oadc, P[5:2], zero,  carry}; // ADC
-        4'b0110: af = {sign,       P[6:2], zero, ~carry}; // CMP
-        4'b0111: af = {sign, osbc, P[5:2], zero, ~carry}; // SBC
-        4'b100x: af = {sign,       P[6:2], zero, op2[7]}; // ASL, ROL
-        4'b101x: af = {sign,       P[6:2], zero, op2[0]}; // LSR, ROR
-        4'b1100: af = {op2[7:6],   P[5:2], zero,   P[0]}; // BIT
-
-    endcase
-
-end
+// Вычисление флагов
+wire [7:0] af =
+    alu     == 4'b0011 ? {sign, oadc, P[5:2], zero,  carry} : // ADC
+    alu     == 4'b0110 ? {sign,       P[6:2], zero, ~carry} : // CMP
+    alu     == 4'b0111 ? {sign, osbc, P[5:2], zero, ~carry} : // SBC
+    alu     == 4'b1100 ? {op2[7:6],   P[5:2], zero,   P[0]} : // BIT
+    alu[3:1] == 3'b100 ? {sign,       P[6:2], zero, op2[7]} : // ASL, ROL
+    alu[3:1] == 3'b101 ? {sign,       P[6:2], zero, op2[0]} : // LSR, ROR
+                         {sign,       P[6:2], zero,   P[0]};  // Others
 
 endmodule

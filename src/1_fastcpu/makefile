@@ -1,20 +1,22 @@
 VRL=/usr/share/verilator/include
 
-all: iverilog
+#all: iverilog
+all: tbc
 tbc: iverilog verilated
 	g++ -o tb -I$(VRL) $(VRL)/verilated.cpp tb.cc -lSDL2 \
-	obj_dir/Vdsub__ALL.a \
+	obj_dir/Vga__ALL.a \
 	obj_dir/Vps2__ALL.a \
 	obj_dir/Vcore__ALL.a
+	./tb
 iverilog:
-	iverilog -g2005-sv -DICARUS=1 -o tb.qqq tb.v core.v dsub.v
+	iverilog -g2005-sv -DICARUS=1 -o tb.qqq tb.v core.v ga.v
 	vvp tb.qqq >> /dev/null
 	rm tb.qqq
 verilated:
-	verilator -cc dsub.v
+	verilator -cc ga.v
 	verilator -cc core.v
 	verilator -cc ps2.v
-	cd obj_dir && make -f Vdsub.mk
+	cd obj_dir && make -f Vga.mk
 	cd obj_dir && make -f Vcore.mk
 	cd obj_dir && make -f Vps2.mk
 vcd:
