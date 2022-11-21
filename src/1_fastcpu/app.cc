@@ -90,7 +90,7 @@ public:
         // Загрузка font
         for (int i = 0; i < 1024; i++) {
 
-            video_char[i] = '-';
+            video_char[i] = '.';
             video_font[i] = font[i];
         }
 
