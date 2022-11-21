@@ -83,23 +83,28 @@ public:
 
         // Загрузить программу, если она есть
         if (fp = fopen("program.bin", "rb")) {
-            fread(memory, 1, 65536, fp);
+            fread(memory + 0x8000, 1, 32768, fp);
             fclose(fp);
         }
 
         // Загрузка font
         for (int i = 0; i < 1024; i++) {
 
-            video_char[i] = i & 127;
+            video_char[i] = '-';
             video_font[i] = font[i];
         }
 
         // Сброс процессора
-        cpu_mod->reset_n = 0;
+        cpu_mod->intr    = 0;
         cpu_mod->hold    = 1;
+        cpu_mod->reset_n = 0;
         cpu_mod->clock   = 0; cpu_mod->eval();
         cpu_mod->clock   = 1; cpu_mod->eval();
         cpu_mod->reset_n = 1;
+
+        // Стартовая точка
+        memory[0xFFFC] = 0x00;
+        memory[0xFFFD] = 0x80;
     }
 
     // Один такт 25 мгц
@@ -126,7 +131,15 @@ public:
         }
 
         // Запись в память после чтения
-        if (cpu_mod->we) memory[A] = cpu_mod->out;
+        if (cpu_mod->we) {
+
+            // Общая память
+            memory[A] = cpu_mod->out;
+
+            // Обособленные области памяти
+            if (A >= 0x2000 && A < 0x3000) video_char[A-0x2000] = cpu_mod->out;
+            if (A >= 0x3000 && A < 0x4000) video_font[A-0x3000] = cpu_mod->out;
+        }
 
         ps2_mod->clock = 0; ps2_mod->eval();
         vga_mod->clock = 0; vga_mod->eval();
